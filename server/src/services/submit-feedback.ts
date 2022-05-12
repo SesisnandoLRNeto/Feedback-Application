@@ -1,3 +1,4 @@
+import { response } from 'express';
 import { MailAdapter } from '../adapters/mail-adapter';
 import { FeedbackRepository } from '../repositories/feedback-repository';
 
@@ -28,21 +29,27 @@ export class SubmitFeedback {
       throw new Error('Comment is required');
     }
 
-    await this.feedbackRepository.create({
-      type,
-      comment,
-      screenshot,
-    });
+    try {
+      await this.feedbackRepository.create({
+        type,
+        comment,
+        screenshot,
+      });
 
-    await this.mailAdapter.sendMail({
-      subject: 'New Feedback',
-      body: [
-        `<div style="font-family: sans-serif; font-size: 16px; color: #111;">`,
-        `<p>Feedback Type: ${type}</p>`,
-        `<p>Comment: ${comment}</p>`,
-        screenshot ? `<img src="${screenshot}"/>` : '',
-        `</div>`,
-      ].join('\n'),
-    });
+      await this.mailAdapter.sendMail({
+        subject: 'New Feedback',
+        body: [
+          `<div style="font-family: sans-serif; font-size: 16px; color: #111;">`,
+          `<p>Feedback Type: ${type}</p>`,
+          `<p>Comment: ${comment}</p>`,
+          screenshot ? `<img src="${screenshot}"/>` : '',
+          `</div>`,
+        ].join('\n'),
+      });
+    } catch (error) {
+      response
+        .status(500)
+        .send({ error: 'Something is wrong in the feedback' });
+    }
   }
 }
